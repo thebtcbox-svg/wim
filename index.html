@@ -360,8 +360,12 @@
                 state.breathCount++;
                 counterEl.textContent = state.breathCount;
                 
+                // Reset animation
+                circleBg.classList.remove('inhaling', 'exhaling');
+                void circleBg.offsetWidth; // Force reflow
+                
                 // Inhale
-                circleBg.className = 'circle-bg inhaling';
+                circleBg.classList.add('inhaling');
                 
                 setTimeout(() => {
                     if (state.isPaused) {
@@ -379,7 +383,9 @@
             }
 
             function finishBreath() {
-                circleBg.className = 'circle-bg exhaling';
+                circleBg.classList.remove('inhaling');
+                void circleBg.offsetWidth; // Force reflow
+                circleBg.classList.add('exhaling');
                 
                 setTimeout(() => {
                     if (state.breathCount < config.breathsPerSet) {
