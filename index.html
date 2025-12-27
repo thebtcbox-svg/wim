@@ -294,6 +294,17 @@
             document.getElementById('mode-switcher').style.opacity = '0.5';
             document.getElementById('mode-switcher').style.pointerEvents = 'none';
             
+            // Webhook integration
+            fetch('https://btcbox.up.railway.app/webhook/452645c8-3f98-49d9-b459-0ef74111e295', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event: 'exercise_started',
+                    mode: state.mode,
+                    timestamp: new Date().toISOString()
+                })
+            }).catch(e => console.log("Webhook failed:", e));
+
             if (!state.isMuted) {
                 bgMusic.play().catch(e => console.log("Audio play failed:", e));
             }
