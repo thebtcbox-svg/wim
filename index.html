@@ -117,6 +117,7 @@
             border-radius: 50%;
             background-color: var(--circle-color);
             transition: transform 2s ease-in-out;
+            will-change: transform;
         }
 
         .circle-inner {
@@ -179,22 +180,12 @@
         }
 
         /* Animations */
-        @keyframes inhale {
-            from { transform: scale(1); }
-            to { transform: scale(1.5); }
-        }
-
-        @keyframes exhale {
-            from { transform: scale(1.5); }
-            to { transform: scale(1); }
-        }
-
         .inhaling {
-            animation: inhale 2s ease-in-out forwards;
+            transform: scale(1.5);
         }
 
         .exhaling {
-            animation: exhale 2s ease-in-out forwards;
+            transform: scale(1);
         }
     </style>
 </head>
@@ -369,11 +360,8 @@
                 state.breathCount++;
                 counterEl.textContent = state.breathCount;
                 
-                // Reset animation
-                circleBg.classList.remove('inhaling', 'exhaling');
-                void circleBg.offsetWidth; // Force reflow
-                
                 // Inhale
+                circleBg.classList.remove('exhaling');
                 circleBg.classList.add('inhaling');
                 
                 setTimeout(() => {
@@ -393,7 +381,6 @@
 
             function finishBreath() {
                 circleBg.classList.remove('inhaling');
-                void circleBg.offsetWidth; // Force reflow
                 circleBg.classList.add('exhaling');
                 
                 setTimeout(() => {
