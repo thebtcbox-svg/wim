@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Breathing Exercise</title>
+    <link rel="icon" type="image/png" href="image.png">
+    <link rel="apple-touch-icon" href="image.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --text-color: #2d3748;
+            --accent-color: #4299e1;
+            --circle-color: rgba(66, 153, 225, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.5s ease;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        /* Header & Mode Switcher */
+        .header {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .mode-switcher {
+            display: flex;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 20px;
+            padding: 4px;
+        }
+
+        .mode-btn {
+            border: none;
+            background: none;
+            padding: 8px 20px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #718096;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            background: white;
+            color: var(--accent-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .sound-toggle {
+            position: absolute;
+            right: 0;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .circle-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circle-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: var(--circle-color);
+            transition: transform 2s ease-in-out;
+        }
+
+        .circle-inner {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        #status-label {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #counter {
+            font-size: 4rem;
+            font-weight: 700;
+        }
+
+        /* Controls */
+        .controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .primary-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 16px 60px;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .primary-btn:active {
+            transform: scale(0.95);
+        }
+
+        .secondary-btn {
+            background: none;
+            border: 1px solid #cbd5e0;
+            color: #718096;
+            padding: 10px 30px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Animations */
+        @keyframes inhale {
+            from { transform: scale(1); }
+            to { transform: scale(1.5); }
+        }
+
+        @keyframes exhale {
+            from { transform: scale(1.5); }
+            to { transform: scale(1); }
+        }
+
+        .inhaling {
+            animation: inhale 2s ease-in-out forwards;
+        }
+
+        .exhaling {
+            animation: exhale 2s ease-in-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div class="mode-switcher" id="mode-switcher">
+                <button class="mode-btn active" data-mode="beginner">Beginner</button>
+                <button class="mode-btn" data-mode="pro">Pro</button>
+            </div>
+            <button class="sound-toggle" id="sound-toggle">🔊</button>
+        </div>
+
+        <div class="main-content">
+            <div class="circle-container">
+                <div class="circle-bg" id="circle-bg"></div>
+                <div class="circle-inner">
+                    <div id="status-label">Ready</div>
+                    <div id="counter"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="start-btn" class="primary-btn">Start</button>
+            <div id="active-controls" class="hidden">
+                <button id="pause-btn" class="primary-btn">Pause</button>
+                <button id="reset-btn" class="secondary-btn">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="bg-music" src="music.mp3" loop></audio>
+
+    <script>
+        const state = {
+            mode: 'beginner',
+            isStarted: false,
+            isPaused: false,
+            isMuted: false,
+            currentSet: 1,
+            currentPhase: 'breathing', // breathing, hold1, inhale, hold2
+            breathCount: 0,
+            timer: 0,
+            interval: null
+        };
+
+        const config = {
+            breathsPerSet: 30,
+            hold1: {
+                beginner: [30, 60, 90],
+                pro: [60, 90, 120]
+            },
+            inhaleHold: 15,
+            inhaleTime: 2000,
+            exhaleTime: 2000
+        };
+
+        // DOM Elements
+        const circleBg = document.getElementById('circle-bg');
+        const statusLabel = document.getElementById('status-label');
+        const counterEl = document.getElementById('counter');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const activeControls = document.getElementById('active-controls');
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const soundToggle = document.getElementById('sound-toggle');
+        const bgMusic = document.getElementById('bg-music');
+
+        // Initialization
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (state.isStarted) return;
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.mode = btn.dataset.mode;
+            });
+        });
+
+        soundToggle.addEventListener('click', () => {
+            state.isMuted = !state.isMuted;
+            bgMusic.muted = state.isMuted;
+            soundToggle.textContent = state.isMuted ? '🔇' : '🔊';
+        });
+
+        startBtn.addEventListener('click', startExercise);
+        pauseBtn.addEventListener('click', togglePause);
+        resetBtn.addEventListener('click', resetExercise);
+
+        function startExercise() {
+            state.isStarted = true;
+            state.isPaused = false;
+            state.currentSet = 1;
+            startBtn.classList.add('hidden');
+            activeControls.classList.remove('hidden');
+            document.getElementById('mode-switcher').style.opacity = '0.5';
+            document.getElementById('mode-switcher').style.pointerEvents = 'none';
+            
+            if (!state.isMuted) {
+                bgMusic.play().catch(e => console.log("Audio play failed:", e));
+            }
+            
+            runBreathingPhase();
+        }
+
+        function togglePause() {
+            state.isPaused = !state.isPaused;
+            pauseBtn.textContent = state.isPaused ? 'Resume' : 'Pause';
+            
+            if (state.isPaused) {
+                circleBg.style.animationPlayState = 'paused';
+                bgMusic.pause();
+            } else {
+                circleBg.style.animationPlayState = 'running';
+                if (!state.isMuted) bgMusic.play();
+            }
+        }
+
+        function resetExercise() {
+            clearInterval(state.interval);
+            state.isStarted = false;
+            state.isPaused = false;
+            state.currentSet = 1;
+            state.breathCount = 0;
+            
+            startBtn.classList.remove('hidden');
+            activeControls.classList.add('hidden');
+            document.getElementById('mode-switcher').style.opacity = '1';
+            document.getElementById('mode-switcher').style.pointerEvents = 'auto';
+            
+            statusLabel.textContent = 'Ready';
+            counterEl.textContent = '';
+            circleBg.className = 'circle-bg';
+            bgMusic.pause();
+            bgMusic.currentTime = 0;
+            pauseBtn.textContent = 'Pause';
+        }
+
+        function runBreathingPhase() {
+            state.currentPhase = 'breathing';
+            state.breathCount = 0;
+            statusLabel.textContent = `Set ${state.currentSet}: Breathe`;
+            
+            function nextBreath() {
+                if (!state.isStarted) return;
+                if (state.isPaused) {
+                    setTimeout(nextBreath, 100);
+                    return;
+                }
+
+                state.breathCount++;
+                counterEl.textContent = state.breathCount;
+                
+                // Inhale
+                circleBg.className = 'circle-bg inhaling';
+                
+                setTimeout(() => {
+                    if (state.isPaused) {
+                        // Wait for resume
+                        const checkResume = setInterval(() => {
+                            if (!state.isPaused) {
+                                clearInterval(checkResume);
+                                finishBreath();
+                            }
+                        }, 100);
+                    } else {
+                        finishBreath();
+                    }
+                }, config.inhaleTime);
+            }
+
+            function finishBreath() {
+                circleBg.className = 'circle-bg exhaling';
+                
+                setTimeout(() => {
+                    if (state.breathCount < config.breathsPerSet) {
+                        nextBreath();
+                    } else {
+                        runHoldPhase();
+                    }
+                }, config.exhaleTime);
+            }
+
+            nextBreath();
+        }
+
+        function runHoldPhase() {
+            state.currentPhase = 'hold1';
+            statusLabel.textContent = 'Hold Breath';
+            circleBg.className = 'circle-bg';
+            
+            const holdTime = config.hold1[state.mode][state.currentSet - 1];
+            state.timer = holdTime;
+            counterEl.textContent = state.timer;
+
+            state.interval = setInterval(() => {
+                if (state.isPaused) return;
+                
+                state.timer--;
+                counterEl.textContent = state.timer;
+
+                if (state.timer <= 0) {
+                    clearInterval(state.interval);
+                    runInhaleHoldPhase();
+                }
+            }, 1000);
+        }
+
+        function runInhaleHoldPhase() {
+            state.currentPhase = 'inhale';
+            statusLabel.textContent = 'Deep Inhale & Hold';
+            circleBg.className = 'circle-bg inhaling';
+            
+            state.timer = config.inhaleHold;
+            counterEl.textContent = state.timer;
+
+            state.interval = setInterval(() => {
+                if (state.isPaused) return;
+                
+                state.timer--;
+                counterEl.textContent = state.timer;
+
+                if (state.timer <= 0) {
+                    clearInterval(state.interval);
+                    
+                    if (state.currentSet < 3) {
+                        state.currentSet++;
+                        runBreathingPhase();
+                    } else {
+                        completeExercise();
+                    }
+                }
+            }, 1000);
+        }
+
+        function completeExercise() {
+            statusLabel.textContent = 'Finished';
+            counterEl.textContent = '✨';
+            circleBg.className = 'circle-bg';
+            setTimeout(resetExercise, 5000);
+        }
+    </script>
+</body>
+</html>
