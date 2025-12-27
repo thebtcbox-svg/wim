@@ -340,6 +340,7 @@
             statusLabel.textContent = 'Ready';
             counterEl.textContent = '';
             circleBg.className = 'circle-bg';
+            circleBg.style.animationPlayState = 'running'; // Reset play state
             bgMusic.pause();
             bgMusic.currentTime = 0;
             pauseBtn.textContent = 'Pause';
