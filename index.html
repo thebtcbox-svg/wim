@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -78,7 +79,7 @@
         .mode-btn.active {
             background: white;
             color: var(--accent-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .sound-toggle {
@@ -118,6 +119,14 @@
             background-color: var(--circle-color);
             transition: transform 2s ease-in-out;
             will-change: transform;
+        }
+
+        .circle-bg.inhaling {
+            transition: transform 4s ease-in-out;
+        }
+
+        .circle-bg.exhaling {
+            transition: transform 2s ease-in-out;
         }
 
         .circle-inner {
@@ -189,6 +198,7 @@
         }
     </style>
 </head>
+
 <body>
     <div id="app">
         <div class="header">
@@ -213,7 +223,10 @@
             <button id="start-btn" class="primary-btn">Start</button>
             <div id="active-controls" class="hidden">
                 <button id="pause-btn" class="primary-btn">Pause</button>
-                <button id="reset-btn" class="secondary-btn">Reset</button>
+                <div style="display: flex; gap: 10px;">
+                    <button id="ff-btn" class="secondary-btn">FF 10s</button>
+                    <button id="reset-btn" class="secondary-btn">Reset</button>
+                </div>
             </div>
         </div>
     </div>
@@ -221,6 +234,28 @@
     <audio id="bg-music" src="music.mp3" loop></audio>
 
     <script>
+        // Audio Context for Peep Sound
+        let audioCtx = null;
+        function playPeep() {
+            if (state.isMuted) return;
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.5);
+        }
+
         // Device ID management
         let deviceId = localStorage.getItem('breathing_app_device_id');
         if (!deviceId) {
@@ -247,7 +282,7 @@
                 pro: [60, 90, 120]
             },
             inhaleHold: 15,
-            inhaleTime: 2000,
+            inhaleTime: 4000,
             exhaleTime: 2000
         };
 
@@ -257,6 +292,7 @@
         const counterEl = document.getElementById('counter');
         const startBtn = document.getElementById('start-btn');
         const pauseBtn = document.getElementById('pause-btn');
+        const ffBtn = document.getElementById('ff-btn');
         const resetBtn = document.getElementById('reset-btn');
         const activeControls = document.getElementById('active-controls');
         const modeBtns = document.querySelectorAll('.mode-btn');
@@ -281,6 +317,7 @@
 
         startBtn.addEventListener('click', startExercise);
         pauseBtn.addEventListener('click', togglePause);
+        ffBtn.addEventListener('click', fastForward);
         resetBtn.addEventListener('click', resetExercise);
 
         function startExercise() {
@@ -291,7 +328,7 @@
             activeControls.classList.remove('hidden');
             document.getElementById('mode-switcher').style.opacity = '0.5';
             document.getElementById('mode-switcher').style.pointerEvents = 'none';
-            
+
             // Webhook integration
             fetch('https://btcbox.up.railway.app/webhook/452645c8-3f98-49d9-b459-0ef74111e295', {
                 method: 'POST',
@@ -307,14 +344,26 @@
             if (!state.isMuted) {
                 bgMusic.play().catch(e => console.log("Audio play failed:", e));
             }
-            
+
             runBreathingPhase();
+        }
+
+        function fastForward() {
+            if (!state.isStarted || state.isPaused) return;
+
+            if (state.currentPhase === 'breathing') {
+                state.breathCount = Math.min(state.breathCount + 5, config.breathsPerSet - 1);
+                counterEl.textContent = state.breathCount;
+            } else if (state.currentPhase === 'hold1' || state.currentPhase === 'inhale') {
+                state.timer = Math.max(state.timer - 10, 1);
+                counterEl.textContent = state.timer;
+            }
         }
 
         function togglePause() {
             state.isPaused = !state.isPaused;
             pauseBtn.textContent = state.isPaused ? 'Resume' : 'Pause';
-            
+
             if (state.isPaused) {
                 circleBg.style.animationPlayState = 'paused';
                 bgMusic.pause();
@@ -330,12 +379,12 @@
             state.isPaused = false;
             state.currentSet = 1;
             state.breathCount = 0;
-            
+
             startBtn.classList.remove('hidden');
             activeControls.classList.add('hidden');
             document.getElementById('mode-switcher').style.opacity = '1';
             document.getElementById('mode-switcher').style.pointerEvents = 'auto';
-            
+
             statusLabel.textContent = 'Ready';
             counterEl.textContent = '';
             circleBg.className = 'circle-bg';
@@ -349,7 +398,7 @@
             state.currentPhase = 'breathing';
             state.breathCount = 0;
             statusLabel.textContent = `Set ${state.currentSet}: Breathe`;
-            
+
             function nextBreath() {
                 if (!state.isStarted) return;
                 if (state.isPaused) {
@@ -359,11 +408,11 @@
 
                 state.breathCount++;
                 counterEl.textContent = state.breathCount;
-                
+
                 // Inhale
                 circleBg.classList.remove('exhaling');
                 circleBg.classList.add('inhaling');
-                
+
                 setTimeout(() => {
                     if (state.isPaused) {
                         // Wait for resume
@@ -382,11 +431,12 @@
             function finishBreath() {
                 circleBg.classList.remove('inhaling');
                 circleBg.classList.add('exhaling');
-                
+
                 setTimeout(() => {
                     if (state.breathCount < config.breathsPerSet) {
                         nextBreath();
                     } else {
+                        playPeep();
                         runHoldPhase();
                     }
                 }, config.exhaleTime);
@@ -399,19 +449,20 @@
             state.currentPhase = 'hold1';
             statusLabel.textContent = 'Hold Breath';
             circleBg.className = 'circle-bg';
-            
+
             const holdTime = config.hold1[state.mode][state.currentSet - 1];
             state.timer = holdTime;
             counterEl.textContent = state.timer;
 
             state.interval = setInterval(() => {
                 if (state.isPaused) return;
-                
+
                 state.timer--;
                 counterEl.textContent = state.timer;
 
                 if (state.timer <= 0) {
                     clearInterval(state.interval);
+                    playPeep();
                     runInhaleHoldPhase();
                 }
             }, 1000);
@@ -421,19 +472,20 @@
             state.currentPhase = 'inhale';
             statusLabel.textContent = 'Deep Inhale & Hold';
             circleBg.className = 'circle-bg inhaling';
-            
+
             state.timer = config.inhaleHold;
             counterEl.textContent = state.timer;
 
             state.interval = setInterval(() => {
                 if (state.isPaused) return;
-                
+
                 state.timer--;
                 counterEl.textContent = state.timer;
 
                 if (state.timer <= 0) {
                     clearInterval(state.interval);
-                    
+                    playPeep();
+
                     if (state.currentSet < 3) {
                         state.currentSet++;
                         runBreathingPhase();
@@ -451,5 +503,12 @@
             setTimeout(resetExercise, 5000);
         }
     </script>
+
+    <!-- WUUNU SNIPPET - DON'T CHANGE THIS (START) -->
+    <script>window.__WUUNU_WS__ = "http://127.0.0.1:52249/?token=945967154bdc6d955a7a44a40f8cf551ce2348b5180d4a24";</script>
+    <script id="wuunu-widget-script" data-wuunu-widget src="https://cdn.jsdelivr.net/npm/@wuunu/widget@0.1.21" defer
+        crossOrigin="anonymous"></script>
+    <!-- WUUNU SNIPPET - DON'T CHANGE THIS (END) -->
 </body>
+
 </html>
