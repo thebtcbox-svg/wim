@@ -222,11 +222,12 @@
         <div class="controls">
             <button id="start-btn" class="primary-btn">Start</button>
             <div id="active-controls" class="hidden" style="display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%;">
-                <button id="pause-btn" class="primary-btn">Pause</button>
                 <div style="display: flex; gap: 10px; width: 100%; justify-content: center;">
+                    <button id="ff-back-btn" class="secondary-btn" style="flex: 1; max-width: 120px;">Back 10s</button>
                     <button id="ff-btn" class="secondary-btn" style="flex: 1; max-width: 120px;">FF 10s</button>
-                    <button id="reset-btn" class="secondary-btn" style="flex: 1; max-width: 120px;">Reset</button>
                 </div>
+                <button id="pause-btn" class="primary-btn">Pause</button>
+                <button id="reset-btn" class="secondary-btn" style="width: 100%; max-width: 250px;">Reset</button>
             </div>
         </div>
     </div>
@@ -285,6 +286,7 @@
         const startBtn = document.getElementById('start-btn');
         const pauseBtn = document.getElementById('pause-btn');
         const ffBtn = document.getElementById('ff-btn');
+        const ffBackBtn = document.getElementById('ff-back-btn');
         const resetBtn = document.getElementById('reset-btn');
         const activeControls = document.getElementById('active-controls');
         const modeBtns = document.querySelectorAll('.mode-btn');
@@ -310,6 +312,7 @@
         startBtn.addEventListener('click', startExercise);
         pauseBtn.addEventListener('click', togglePause);
         ffBtn.addEventListener('click', fastForward);
+        ffBackBtn.addEventListener('click', fastForwardBack);
         resetBtn.addEventListener('click', resetExercise);
 
         function startExercise() {
@@ -355,6 +358,19 @@
                 counterEl.textContent = state.breathCount;
             } else if (state.currentPhase === 'hold1' || state.currentPhase === 'inhale') {
                 state.timer = Math.max(state.timer - 10, 1);
+                counterEl.textContent = state.timer;
+            }
+        }
+
+        function fastForwardBack() {
+            if (!state.isStarted || state.isPaused) return;
+
+            if (state.currentPhase === 'breathing') {
+                state.breathCount = Math.max(state.breathCount - 5, 0);
+                counterEl.textContent = state.breathCount;
+            } else if (state.currentPhase === 'hold1' || state.currentPhase === 'inhale') {
+                const maxHold = state.currentPhase === 'hold1' ? config.hold1[state.mode][state.currentSet - 1] : config.inhaleHold;
+                state.timer = Math.min(state.timer + 10, maxHold);
                 counterEl.textContent = state.timer;
             }
         }
