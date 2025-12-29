@@ -221,39 +221,25 @@
 
         <div class="controls">
             <button id="start-btn" class="primary-btn">Start</button>
-            <div id="active-controls" class="hidden">
+            <div id="active-controls" class="hidden" style="display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%;">
                 <button id="pause-btn" class="primary-btn">Pause</button>
-                <div style="display: flex; gap: 10px;">
-                    <button id="ff-btn" class="secondary-btn">FF 10s</button>
-                    <button id="reset-btn" class="secondary-btn">Reset</button>
+                <div style="display: flex; gap: 10px; width: 100%; justify-content: center;">
+                    <button id="ff-btn" class="secondary-btn" style="flex: 1; max-width: 120px;">FF 10s</button>
+                    <button id="reset-btn" class="secondary-btn" style="flex: 1; max-width: 120px;">Reset</button>
                 </div>
             </div>
         </div>
     </div>
 
     <audio id="bg-music" src="music.mp3" loop></audio>
+    <audio id="peep-sound" src="beep.mp3"></audio>
 
     <script>
-        // Audio Context for Peep Sound
-        let audioCtx = null;
         function playPeep() {
             if (state.isMuted) return;
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.5);
+            const peepSound = document.getElementById('peep-sound');
+            peepSound.currentTime = 0;
+            peepSound.play().catch(e => console.log("Peep play failed:", e));
         }
 
         // Device ID management
@@ -503,9 +489,6 @@
             setTimeout(resetExercise, 5000);
         }
     </script>
-
->>>>+++ REPLACE
-
 </body>
 
 </html>
