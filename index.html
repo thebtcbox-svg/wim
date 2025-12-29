@@ -307,6 +307,13 @@
         resetBtn.addEventListener('click', resetExercise);
 
         function startExercise() {
+            // Pre-load/unlock audio for mobile devices
+            const peepSound = document.getElementById('peep-sound');
+            peepSound.play().then(() => {
+                peepSound.pause();
+                peepSound.currentTime = 0;
+            }).catch(e => console.log("Audio unlock failed:", e));
+
             state.isStarted = true;
             state.isPaused = false;
             state.currentSet = 1;
